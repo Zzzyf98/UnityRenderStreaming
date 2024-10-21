@@ -4,49 +4,247 @@
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <link rel="icon" href="../images/favicon.ico" type="image/x-icon">
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <link rel="stylesheet" href="../css/main.css" />
   <link rel="stylesheet" href="css/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <title>Receiver Sample</title>
 </head>
 
 <body>
 
-  <div id="container">
-    <h1>Receiver Sample</h1>
+  <div class="min-h-screen bg-gray-900 text-white font-sans">
+    <header class="bg-gray-800 p-4 h-20">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center">
+          <div class="text-4xl font-bold mr-4">COP</div>
+          <h1 class="text-3xl">COP for Landslide Emergency Management</h1>
+        </div>
+        <div class="flex items-center space-x-4">
+          <label class="flex items-center">
+            <input type="checkbox" v-model="showMajorCases" class="mr-2" />
+            Show Major Cases Only
+          </label>
+          <label class="flex items-center">
+            <input type="checkbox" v-model="showActiveCases" class="mr-2" />
+            Show Active Cases Only
+          </label>
+          <select v-model="reportingPeriod" class="bg-gray-700 p-1 rounded">
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+      </div>
+    </header>
 
-    <div id="warning" hidden="true"></div>
+    <nav class="bg-gray-800 p-4">
+      <button @click="showPage('worksDepts')" :class="{'text-white border-b-2 border-white': currentPage === 'worksDepts', 'text-gray-400': currentPage !== 'worksDepts'}" class="mr-4">Main Page</button>
+      <button @click="showPage('fsdHkpf')" :class="{'text-white border-b-2 border-white': currentPage === 'fsdHkpf', 'text-gray-400': currentPage !== 'fsdHkpf'}" class="mr-4">Arcgis Map</button>
+      <button @click="showPage('traffic')" :class="{'text-white border-b-2 border-white': currentPage === 'traffic', 'text-gray-400': currentPage !== 'traffic'}">PDF Report</button>
+    </nav>
 
-    <div id="player"></div>
+    <div v-show="currentPage === 'worksDepts'" class="flex min-h-screen">
+      <div class="w-1/4 p-4 ">
+        <div class="mb-6">
+          <h3 class="text-lg font-bold mb-2">Emergency Control Centre</h3>
+          <ul id="department-list" class="space-y-2"></ul>
+        </div>
+        <div>
+          <h3 class="text-lg font-bold mb-2">Incident Summary List</h3>
+          <ul id="incident-list" class="space-y-4">
+          </ul>
+        </div>
+      </div>
 
-    <div class="box">
-      <span>Codec preferences:</span>
-      <select id="codecPreferences" autocomplete="off" disabled>
-        <option selected value="">Default</option>
-      </select>
+      <div class="w-1/2 p-4 h-full">
+        <div class="mb-4">
+          <h3 class="text-lg font-bold mb-2">Reported Incident Overview Map</h3>
+          <div class="bg-gray-800 h-176 relative">
+            <!-- Placeholder for the map -->
+            <div id="container" class=" h-176 relative">
+              <div id="player"></div>
+          
+              <div class="box">
+                <span>Codec preferences:</span>
+                <select id="codecPreferences" autocomplete="off" disabled>
+                  <option selected value="">Default</option>
+                </select>
+              </div>
+              <div id="message"></div>
+            </div>
+          </div>
+        </div>
+        <div class="grid grid-cols-4 gap-4"  id="department-grid">
+        </div>
+      </div>
+
+      <div class="w-1/4 p-4">
+        <div class="mb-4">
+          <h3 class="text-lg font-bold mb-2">GIS Map Platform</h3>
+          <div class="space-x-2 mb-2">
+            <button class="bg-blue-500 text-white px-4 py-2 rounded">FULL FUNCTION MODE</button>
+            <button class="bg-green-500 text-white px-4 py-2 rounded">QUICK PREVIEW MODE</button>
+          </div>
+          <div class="bg-gray-800 h-118 rounded mt-4">
+            <!-- Placeholder for the GIS map -->
+            <div class="flex">
+              <img src="./GISmap/rainfall_map.png" alt="Rainfall Map" class="mt-5"/>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="bg-gray-800 h-118 flex items-center justify-center relative mt-6 rounded">
+            <!-- 使用饼图组件 -->
+            <div class="px-4 py-2">
+              <canvas id="myPieChart" width="400" height="400"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div class="box">
-      <span>Lock Cursor to Player:</span>
-      <input type="checkbox" id="lockMouseCheck" autocomplete="off" />
+    <div v-show="currentPage === 'fsdHkpf'" ref="viewDiv" class="flex min-h-screen"></div>
+
+    <div v-show="currentPage === 'traffic'" class="flex min-h-screen ">
+      <div class="h-full mx-auto mt-4">
+            <canvas ref="pdfCanvas"></canvas>
+      </div>
     </div>
+    
 
-    <p>
-      For more information about sample, see
-        <a href="https://docs.unity3d.com/Packages/com.unity.renderstreaming@3.1/manual/sample-broadcast.html">Broadcast sample</a> document page.
-    </p>
-
-    <div id="message"></div>
-
-    <section>
-      <a href="https://github.com/Unity-Technologies/UnityRenderStreaming/tree/develop/WebApp/client/public/receiver"
-        title="View source for this page on GitHub" id="viewSource">View source on GitHub</a>
-    </section>
   </div>
+
+  
 
   <script type="text/javascript" src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
   <script src="https://unpkg.com/event-target@latest/min.js"></script>
   <script src="https://unpkg.com/resize-observer-polyfill@1.5.0/dist/ResizeObserver.global.js"></script>
   <script type="module" src="js/main.js"></script>
+  
+
+  <script>
+    // incidents 数组
+    const incidents = [
+        { id: '2022/06/3137', type: 'Minor', date: '09/06/2022 11:24:18', location: 'Feature No.8SW-B/C137, Hous...' },
+        { id: '202206093503', type: 'Emergency', date: '09/06/2022 11:10:00', location: 'Clear Water Bay No.9' },
+        { id: '202206093501', type: 'Emergency', date: '09/06/2022 10:35:00', location: 'Pending...' },
+        { id: '202206093502', type: 'Emergency', date: '09/06/2022 10:36:00', location: 'Pending...' },
+        { id: '202206093503', type: 'Emergency', date: '09/06/2022 10:37:00', location: 'Pending...' },
+      // 其他事件对象
+    ];
+
+    // 获取 ul 元素
+    const incidentList = document.getElementById('incident-list');
+
+    // 动态生成 li 元素并插入到 ul 中
+    incidents.forEach(incident => {
+      const li = document.createElement('li');
+      li.className = 'bg-gray-800 p-2 rounded';
+      li.innerHTML = `
+        <strong>${incident.id} (${incident.type})</strong>
+        <p class="text-sm text-gray-400">Created Date: ${incident.date}</p>
+        <p class="text-sm text-gray-400">Location: ${incident.location}</p>
+      `;
+      incidentList.appendChild(li);
+    });
+  </script>
+
+
+  <script>
+    // departments 数组
+    const departments = [
+        { name: 'ArchSD', icon: '/./logo/ASD.jpg', status: 'Inactive', incidents: 0 },
+        { name: 'BD', icon: '/./logo/BD.jpg', status: 'Inactive', incidents: 0 },
+        { name: 'CEDD', icon: '/./logo/CEDD.jpg', status: 'Inactive', incidents: 4 },
+        { name: 'DSD', icon: '/./logo/DSD.jpg', status: 'Inactive', incidents: 5 },
+        { name: 'HyD', icon: '/./logo/HyD.jpg', status: 'Inactive', incidents: 1 },
+        { name: 'HD', icon: '/./logo/HD.jpg', status: 'Inactive', incidents: 0 },
+        { name: 'LandsD', icon: '/./logo/LD.jpg', status: 'Inactive', incidents: 1 },
+        { name: 'WSD', icon: '/./logo/WSD.jpg', status: 'Inactive', incidents: 87 },
+    ];
+
+    // 获取 ul 元素
+    const departmentList = document.getElementById('department-list');
+     // 获取 grid 容器
+     const departmentGrid = document.getElementById('department-grid');
+
+    // 动态生成 li 元素并插入到 ul 中
+    departments.forEach(dept => {
+      const li = document.createElement('li');
+      li.className = 'flex items-center justify-between bg-gray-800 p-2 rounded';
+      li.innerHTML = `
+        <div class="flex items-center">
+          <img src="${dept.icon}" alt="${dept.name}" class="w-6 h-6 mr-2" />
+          ${dept.name}
+        </div>
+        <span class="text-gray-400">${dept.status}</span>
+      `;
+      departmentList.appendChild(li);
+    });
+
+    // 动态生成 div 元素并插入到 grid 容器中
+    departments.forEach(dept => {
+      const div = document.createElement('div');
+      div.className = 'bg-gray-800 p-2 rounded text-center';
+      div.innerHTML = `
+        <img src="${dept.icon}" alt="${dept.name}" class="w-8 h-8 mx-auto mb-2" />
+        <span class="text-lg font-bold">${dept.incidents}</span>
+      `;
+      departmentGrid.appendChild(div);
+    });
+
+
+  </script>
+
+
+
+
+<script>
+  // 获取 canvas 元素
+  const ctx = document.getElementById('myPieChart').getContext('2d');
+
+  // 创建饼状图
+  const myPieChart = new Chart(ctx, {
+    type: 'pie',
+    data: {
+      labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
+      datasets: [{
+        label: '# of Votes',
+        data: [12, 19, 3, 5, 2, 3],
+        backgroundColor: [
+          'rgba(255, 99, 132, 0.2)',
+          'rgba(54, 162, 235, 0.2)',
+          'rgba(255, 206, 86, 0.2)',
+          'rgba(75, 192, 192, 0.2)',
+          'rgba(153, 102, 255, 0.2)',
+          'rgba(255, 159, 64, 0.2)'
+        ],
+        borderColor: [
+          'rgba(255, 99, 132, 1)',
+          'rgba(54, 162, 235, 1)',
+          'rgba(255, 206, 86, 1)',
+          'rgba(75, 192, 192, 1)',
+          'rgba(153, 102, 255, 1)',
+          'rgba(255, 159, 64, 1)'
+        ],
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: 'top',
+        },
+        title: {
+          display: true,
+          text: 'Pie Chart Example'
+        }
+      }
+    }
+  });
+</script>
+
+
 
 </body>
 
